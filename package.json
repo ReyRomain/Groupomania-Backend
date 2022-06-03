@@ -4,9 +4,16 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "nodemon"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ReyRomain/Groupomania-Backend.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ReyRomain/Groupomania-Backend/issues"
+  },
+  "homepage": "https://github.com/ReyRomain/Groupomania-Backend#readme",
   "author": "",
   "license": "ISC",
   "dependencies": {
