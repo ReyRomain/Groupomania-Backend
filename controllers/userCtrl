@@ -13,6 +13,8 @@ const bcrypt = require('bcrypt');
 
 const jwt = require('jsonwebtoken');
 
+const {findByEmail} = require("../models/usersModels");
+
 /**
  * Authentifie l'utilisateur 
  *
@@ -24,7 +26,7 @@ const jwt = require('jsonwebtoken');
  */
 function login(req, res, next) {
 
-    User.findOne({ email: req.body.email })
+    findByEmail.findOne({ email: req.body.email })
         .then(user => {
             if (!user) {
                 return res.status(401).json({ error: 'User not found !' });
@@ -55,15 +57,15 @@ function login(req, res, next) {
  * @param   {ServerResponse}                       res      la réponse
  * @param   {NextFunction}                         next     passe à la fonction suivante
  *
- * @return  {Promise.<void>}
+ * @return  {void}
  */
-async function signup(req, res, next) {
+function signup(req, res, next) {
     try {
         const { email, password } = req.body;
         if (!email || !password) throw "uncomplete credentials";
-        if (await User.findOne({ email })) throw "email already exists";
-        const newUser = new User({ email, password: bcrypt.hashSync(password, 10) });
-        await newUser.save();
+        if (findByEmail({email})) throw "email already exists";
+        const newUser = new findByEmail({ email, password: bcrypt.hashSync(password, 10) });
+        newUser.save();
         res.status(201).json({ message: "user created" })
 
     } catch (error) {
