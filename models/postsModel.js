@@ -14,8 +14,17 @@ const postSchema =  /*sql*/`
 
 initTable("posts", postSchema);
 
+/**
+ * Trouve l'utilisateur par son Id
+ *
+ * @param   {Object}  userId            récupère l'objet
+ * @param   {String}  userId.user_id    récupère le string entré par l'utilisateur
+ *
+ * @return  {Boolean}                   retourne true ou false
+ */
 function findByUserId(userId){
-
+    const sql = db.prepare("SELECT id FROM posts WHERE user_id=$user_id");
+    return sql.get(userId) ? true : false;
 }
 
 
