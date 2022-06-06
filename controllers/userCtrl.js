@@ -61,8 +61,8 @@ function login(req, res, next) {
  */
 function signup(req, res, next) {
     try {
-        const { email, password } = req.body;
-        if (!email || !password) throw "uncomplete credentials";
+        const { email, password, name } = req.body;
+        if (!email || !password || !name) throw "uncomplete credentials";
         if (findByEmail({email})) throw "email already exists";
         const newUser = new findByEmail({ email, password: bcrypt.hashSync(password, 10) });
         newUser.save();
@@ -71,6 +71,12 @@ function signup(req, res, next) {
     } catch (error) {
         res.status(400).json({ error });
     }
+}
+
+function deleteUser(req, res, next) {
+    findByEmail.deleteOne({ userId: req.params.userId })
+        .then(() => res.status(200).json({ message: 'Utilisateur supprimé !'}))
+        .catch(error => res.status(400).json({ error }));
 }
 
 module.exports = {
