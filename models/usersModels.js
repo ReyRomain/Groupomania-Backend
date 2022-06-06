@@ -8,7 +8,7 @@ const {db, initTable} = require("./database");
 const userSchema =  /*sql*/`
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     pwd TEXT,
-    email TEXT,
+    email TEXT NOT NULL UNIQUE,
     name TEXT,
     admin BOOLEAN
 `
