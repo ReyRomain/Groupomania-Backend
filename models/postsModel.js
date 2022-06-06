@@ -23,7 +23,7 @@ initTable("posts", postSchema);
  * @return  {Boolean}                   retourne true ou false
  */
 function findByUserId(userId){
-    const sql = db.prepare("SELECT id FROM posts WHERE user_id=$user_id");
+    const sql = db.prepare("SELECT id FROM posts WHERE userId=$userId");
     return sql.get(userId) ? true : false;
 }
 
