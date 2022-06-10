@@ -18,7 +18,7 @@ initTable("posts", postSchema);
  * Trouve l'utilisateur par son Id
  *
  * @param   {Object}  userId            récupère l'objet
- * @param   {String}  userId.user_id    récupère le string entré par l'utilisateur
+ * @param   {String}  userId.userId     récupère le string entré par l'utilisateur
  *
  * @return  {Boolean}                   retourne true ou false
  */
@@ -27,7 +27,57 @@ function findByUserId(userId){
     return sql.get(userId) ? true : false;
 }
 
+/**
+ * Récupère les posts
+ */
+function allPosts(posts) {
+    return db 
+        .prepare("SELECT * FROM posts JOIN users WHERE user.id=userId ORDER BY publication DESC LIMIT 50")
+        .get(posts);
+}
+
+/**
+ * Création d'un post
+ *
+ * @param   {Object}  post              l'objet du post
+ * @param   {String}  post.content      le contenu du post
+ * @param   {String}  post.user_id      le nom de l'utilisateur qui à créé le post
+ * @param   {String}  post.publication  la date de publication du post
+ *
+ * @return  {void}                      création d'un post par l'utilisateur dans la base de donnée
+ */
+function create(post){
+    db
+        .prepare("INSERT INTO posts (content, user_id, publication) VALUES (@content, @user_id, @publication)")
+        .run(post);
+
+}
+
+/**
+ * Modification d'un post
+ *
+ * @param   {Object}  newSpecs                le post modifié par l'utilisateur
+ * @param   {String}  newSpecs.id             l'id de la modification
+ * @param   {String}  [newSpecs.content]      si l'utilisateur modifie le contenu du post
+ * @param   {String}  [newSpecs.user_id]      si l'utilisateur modifie le nom du post
+ * @param   {String}  [newSpecs.publication]  si l'utilisateur modifie la publication du post
+ *
+ * @return  {void}                            modification du post par l'utilisateur dans la base de donnée
+ */
+function updatePost(newSpecs){
+    let sql= "UPDATE posts SET";
+    for (const key in newSpecs){
+        if (key === "id") continue;
+        sql+=` ${key}='${newSpecs[key]}'`;
+    }
+    sql+=" WHERE id=@id";
+    db.prepare(sql).run(newSpecs);
+}
+
 
 module.exports = {
-    findByUserId
+    allPosts,
+    create,
+    findByUserId,
+    updatePost
 }
