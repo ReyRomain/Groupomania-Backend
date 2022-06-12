@@ -16,8 +16,9 @@ const jwt = require('jsonwebtoken');
 
 const fs = require('fs');
 
-const {db} = require("../models/database");
-const {findByEmail, emailExists} = require("../models/usersModels");
+const { db } = require("../models/database");
+const user = require("../models/usersModels");
+const { findByUserId } = require('../models/postsModel');
 
 /**
  * Création d'un utilisateur
@@ -26,33 +27,15 @@ const {findByEmail, emailExists} = require("../models/usersModels");
  * @param   {ServerResponse}                       res      la réponse
  * @param   {NextFunction}                         next     passe à la fonction suivante
  *
- * @return  {void}
+ * @return  {Promise.<void>}
  */
-function signup(req, res, next) {
+async function signup(req, res, next) {
     try {
         const { email, password, name } = req.body;
         if (!email || !password || !name) throw "Credentials non complet";
-        if (findByEmail({email})) throw "Email existe déjà";
-        const newUser = new findByEmail({ email, password, name: bcrypt.hashSync(password, 10) });
-        newUser.save();
+        if (user.emailExists({ email })) throw "Email existe déjà";
+        user.createUser({ email, name, password: await bcrypt.hashSync(password, 10) });
         res.status(201).json({ message: "Utilisateur créé !" })
-
-    } catch (error) {
-        res.status(400).json({ error });
-    }
-}
-
-function signup2(req, res, next) {
-    try {
-        const { email, password, name } = req.body;
-        let sqlSignup, values;
-
-        sqlSignup = "INSERT INTO users (email, password, name) VALUES"
-        values = [ email, password, name ]
-
-        db.query(sqlSignup, values, function (error, result) {
-            if (!error) { res.status(201).json({ message: "Utilisateur créé !"})}
-        })
     } catch (error) {
         res.status(400).json({ error });
     }
@@ -68,50 +51,23 @@ function signup2(req, res, next) {
  * @return  {void}
  */
 function login(req, res, next) {
-
-    findByEmail.findOne({ email: req.body.email })
-        .then(user => {
-            if (!user) {
-                return res.status(401).json({ error: 'Utilisateur non trouvé !' });
-            }
-            bcrypt.compare(req.body.password, user.password)
-                .then(valid => {
-                    if (!valid) {
-                        return res.status(401).json({ error: 'Mot de passe incorrect !' });
-                    }
-                    res.status(200).json({
-                        userId: user._id,
-                        token: jwt.sign(
-                            { userId: user._id },
-                            process.env.JWT_PASS,
-                            { expiresIn: '24h' }
-                        )
-                    });
-                })
-                .catch(error => res.status(500).json({ error }));
-        })
-        .catch(error => res.status(500).json({ error }));
-}
-
-function login2(req, res, next) {
-    let sqlLogin = `SELECT * FROM users WHERE email=?`;
-    db.exec(sqlLogin, [req.body.email], function (error, result) {
-        let user = result[0];
-        if (!valid) {
-            return res.status(401).json({ error: 'Mot de passe incorrect !' });
-        }
-        console.log("Connexion validée");
+    try {
+        const currentUser = user.findByEmail({ email: req.body.email });
+        if (!currentUser) throw 'Utilisateur non trouvé !';
+        const valid = bcrypt.compare(req.body.password, currentUser.password);
+        if (!valid) throw 'Mot de passe incorrect !';
         res.status(200).json({
-            userId: user._id,
+            userId: currentUser.id,
             token: jwt.sign(
-                { userId: user._id },
+                { userId: currentUser.id },
                 process.env.JWT_PASS,
                 { expiresIn: '24h' }
             )
         });
-    })
+    } catch (error) {
+        res.status(400).json({ error });
+    }
 }
-
 /**
  * Modifie un utilisateur
  *
@@ -122,31 +78,16 @@ function login2(req, res, next) {
  * @return  {void}                    envoie une réponse
  */
 function modifyUser(req, res, next) {
-    
-    //modification de name
-    if (req.body.name != "") {
-        let sqlModify = `UPDATE users SET name = ? WHERE id = ?`;
-        db.exec(sqlModify, [req.body.name, req.params.id], function (error, result) {
-            if (error) throw error;
-        })
-    }
 
-    //modification de l'email
-    if (req.body.email != "") {
-        let sqlModify = `UPDATE users SET email = ? WHERE id = ?`;
-        db.exec(sqlModify, [req.body.email, req.params.id], function (error, result) {
-            if (error) throw error;
-        })
-    }
+    try {
+        //si id à modifier !== id courrant throw "pas le droit"
+        //if (id !== findByUserId) throw
+        user.update(req.body);
+        res.status(200).json({ message: "Utilisateur modifié !" });
 
-    //modification du password
-    if (req.body.password != "") {
-        let sqlModify = `UPDATE users SET password = ? WHERE id = ?`;
-        db.exec(sqlModify, [req.body.password, req.params.id], function (error, result) {
-            if (error) throw error;
-        })
+    } catch (error) {
+        res.status(400).json(error);
     }
-    res.status(200).json({ message: "Utilisateur modifié !"});
 }
 
 /**
@@ -160,19 +101,20 @@ function modifyUser(req, res, next) {
  */
 function deleteUser(req, res, next) {
     findByEmail.deleteOne({ userId: req.params.userId })
-        .then(() => res.status(200).json({ message: 'Utilisateur supprimé !'}))
+        .then(() => res.status(200).json({ message: 'Utilisateur supprimé !' }))
         .catch(error => res.status(400).json({ error }));
 }
 
+/*
 function deleteUser2(req, res, next) {
-    if(req.body.password) {
+    if (req.body.password) {
         let sql = "SELECT * FROM users WHERE id=?"
         db.exec(sql, [req.params.id], function (error, result) {
             let user = result[0];
             bcrypt.compare(req.body.password, user.password)
                 .then(valid => {
-                    if(!valid) {
-                        return res.status(401).json({ error: "Mot de passe incorrect !"});
+                    if (!valid) {
+                        return res.status(401).json({ error: "Mot de passe incorrect !" });
                     }
                     else {
                         bcrypt.hash(req.body.password, 10)
@@ -181,7 +123,7 @@ function deleteUser2(req, res, next) {
                                 db.exec(sql, [req.params.id], function (error, result) {
                                     if (error) throw error;
                                     console.log(result);
-                                    res.status(200).json({ message: `Utilisateur ${req.params.id} supprimé !`});
+                                    res.status(200).json({ message: `Utilisateur ${req.params.id} supprimé !` });
                                 })
                             })
                             .catch(error => res.status(500).json({ error }));
@@ -191,6 +133,7 @@ function deleteUser2(req, res, next) {
         })
     }
 }
+*/
 
 module.exports = {
     login,
