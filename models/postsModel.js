@@ -74,6 +74,27 @@ function updatePost(newSpecs){
     db.prepare(sql).run(newSpecs);
 }
 
+/**
+ * Suppression d'un post
+ * 
+ * @param   {Object}   removePost                 l'objet supprimé par l'utilisateur
+ * @param   {String}   removePost.id              l'id de suppression
+ * @param   {String}   removePost.content         l'utilisateur supprime le contenu du post
+ * @param   {String}   removePost.user_id         l'utilisateur supprime le nom du post
+ * @param   {String}   removePost.publication     l'utilisateur supprime la publication du post
+ *
+ * @return  {void}                              suppression du post dans la base de donnée
+ */
+function remove(removePost){
+    let sql= "DELETE FROM posts";
+    for (const key in removePost){
+        if (key === "id") continue;
+        sql+=` ${key}='${removePost[key]}'`;
+    }
+    sql+=" WHERE id=@id";
+    db.prepare(sql).run(removePost);
+}
+
 
 module.exports = {
     allPosts,
