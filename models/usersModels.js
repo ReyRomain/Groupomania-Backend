@@ -76,10 +76,31 @@ function update(newSpecs){
     db.prepare(sql).run(newSpecs);
 }
 
+/**
+ * Suppression d'un utilisateur
+ * 
+ * @param   {Object}   removeUser              l'objet supprimé par l'utilisateur
+ * @param   {String}   removeUser.id           l'id de suppression
+ * @param   {String}   removeUser.email        l'utilisateur supprime son email
+ * @param   {String}   removeUser.name         l'utilisateur supprime son nom
+ * @param   {String}   removeUser.password     l'utilisateur supprime son mot de passe hasher
+ *
+ * @return  {void}                             suppression de l'utilisateur dans la base de donnée
+ */
+function remove(removeUser){
+    let sql= "DELETE FROM users";
+    for (const key in removeUser){
+        if (key === "id") continue;
+        sql+=` ${key}='${removeUser[key]}'`;
+    }
+    sql+=" WHERE id=@id";
+    db.prepare(sql).run(removeUser);
+}
 
 module.exports = {
     createUser,
     emailExists,
     findByEmail,
+    remove,
     update
 }
