@@ -136,7 +136,8 @@ function deleteUser2(req, res, next) {
 */
 
 module.exports = {
+    deleteUser,
     login,
-    signup,
-    deleteUser
+    modifyUser,
+    signup
 }
