@@ -39,7 +39,7 @@ function emailExists(email){
  *
  * @return  {void}                   création de l'utilisateur dans la base de donnée
  */
-function createUser(user){
+function create(user){
     db
         .prepare("INSERT INTO users (pwd, email, name, admin) VALUES (@password, @email, @name, 0)")
         .run(user);
@@ -98,7 +98,7 @@ function remove(removeUser){
 }
 
 module.exports = {
-    createUser,
+    create,
     emailExists,
     findByEmail,
     remove,
