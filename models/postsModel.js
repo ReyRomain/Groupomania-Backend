@@ -64,7 +64,7 @@ function create(post){
  *
  * @return  {void}                            modification du post par l'utilisateur dans la base de donnée
  */
-function updatePost(newSpecs){
+function update(newSpecs){
     let sql= "UPDATE posts SET";
     for (const key in newSpecs){
         if (key === "id") continue;
@@ -100,5 +100,6 @@ module.exports = {
     allPosts,
     create,
     findByUserId,
-    updatePost
+    remove,
+    update
 }
