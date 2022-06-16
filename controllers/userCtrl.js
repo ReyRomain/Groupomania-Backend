@@ -34,7 +34,7 @@ async function signup(req, res, next) {
         const { email, password, name } = req.body;
         if (!email || !password || !name) throw "Credentials non complet";
         if (user.emailExists({ email })) throw "Email existe déjà";
-        user.createUser({ email, name, password: await bcrypt.hashSync(password, 10) });
+        user.create({ email, name, password: await bcrypt.hashSync(password, 10) });
         res.status(201).json({ message: "Utilisateur créé !" })
     } catch (error) {
         res.status(400).json({ error });
@@ -100,7 +100,7 @@ function modifyUser(req, res, next) {
  * @return  {void}                   envoie une réponse
  */
 function deleteUser(req, res, next) {
-    findByEmail.deleteOne({ userId: req.params.userId })
+    user.findByEmail.remove({ userId: req.params.userId })
         .then(() => res.status(200).json({ message: 'Utilisateur supprimé !' }))
         .catch(error => res.status(400).json({ error }));
 }

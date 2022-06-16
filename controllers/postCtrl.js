@@ -11,7 +11,7 @@
 */
 
 const {db} = require("../models/database");
-const {allPosts, create, findByUserId} = require("../models/postsModel")
+const postM = require("../models/postsModel")
 
 const fs = require('fs');
 
@@ -26,7 +26,7 @@ const fs = require('fs');
  */
 function getAllPosts(req, res, next) {
     try {
-        const posts = allPosts();
+        const posts = postM.allPosts();
         res.status(200).json(posts)
     } catch (error) {
         console.warn(error)
@@ -46,7 +46,7 @@ function getAllPosts(req, res, next) {
 function createPost(req, res, next) {
     const postObject = JSON.parse(req.body.post);
     delete postObject._id;
-    const post = create({
+    const post = postM.create({
         ...postObject,
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     });
@@ -70,7 +70,7 @@ function modifyPost(req, res, next) {
             ...JSON.parse(req.body.post),
             imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
         } : { ...req.body };
-    posts.updateOne({ _id: req.params.id }, { ...postObject, _id: req.params.id })
+    postM.update({ _id: req.params.id }, { ...postObject, _id: req.params.id })
         .then(() => res.status(200).json({ message: 'Le post a été modifié !' }))
         .catch(error => res.status(400).json({ error }));
 }
@@ -85,7 +85,7 @@ function modifyPost(req, res, next) {
  * @return  {void}                     envoie une réponse
  */
 function deletePost(req, res, next) {
-    posts.deleteOne({ _id: req.params.id })
+    postM.remove({ _id: req.params.id })
         .then(() => res.status(200).json({ message: 'Le post a été supprimé' }))
         .catch(error => res.status(400).json({ error }));
 }
