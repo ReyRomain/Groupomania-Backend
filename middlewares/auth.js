@@ -21,6 +21,7 @@ module.exports = (req, res, next) => {
         const decodedToken = jwt.verify(token, process.env.JWT_PASS);
         // @ts-ignore
         if (req.body.userId && req.body.userId !== decodedToken.userId) throw 'Invalid user ID';
+        req.authorizedUserId = decodedToken.userId;
         next();
     } catch (error) {
         console.log(error);
