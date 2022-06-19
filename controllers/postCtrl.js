@@ -11,18 +11,19 @@
 */
 
 const {db} = require("../models/database");
-const postM = require("../models/postsModel")
+const postM = require("../models/postsModel");
+const {isAllowedUser} = require("./security");
 
 const fs = require('fs');
 
 /**
  * Récupération des posts
  *
- * @param   {IncomingMessage}  req   [req description]
- * @param   {ServerResponse}   res   [res description]
- * @param   {NextFunction}     next  [next description]
+ * @param   {IncomingMessage}  req   la requête complétée
+ * @param   {ServerResponse}   res   la réponse
+ * @param   {NextFunction}     next  passe à la fonction suivante
  *
- * @return  {void}                   
+ * @return  {void}                   envoie une réponse
  */
 function getAllPosts(req, res, next) {
     try {
@@ -65,14 +66,13 @@ function createPost(req, res, next) {
  * @return  {void}                                                 envoie une réponse
  */
 function modifyPost(req, res, next) {
-    const postObject = req.file ?
-        {
-            ...JSON.parse(req.body.post),
-            imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-        } : { ...req.body };
-    postM.update({ _id: req.params.id }, { ...postObject, _id: req.params.id })
-        .then(() => res.status(200).json({ message: 'Le post a été modifié !' }))
-        .catch(error => res.status(400).json({ error }));
+    try {
+        isAllowedUser({id:req.body.id, idFromToken:req.authorizedUserId})
+        postM.updateById(req.body);
+        res.status(200).json({ message: 'Le post a été modifié !' });
+    } catch (error) {
+        res.status(400).json(error)
+    }
 }
 
 /**
@@ -85,9 +85,18 @@ function modifyPost(req, res, next) {
  * @return  {void}                     envoie une réponse
  */
 function deletePost(req, res, next) {
-    postM.remove({ _id: req.params.id })
-        .then(() => res.status(200).json({ message: 'Le post a été supprimé' }))
-        .catch(error => res.status(400).json({ error }));
+    try {
+        const authorId = postM.findAuthorByPostId({id:req.params.id })
+        isAllowedUser({
+            id: authorId,
+            idFromToken: req.authorizedUserId,
+            couldBeAdmin : true
+        });
+        postM.removeById({ id: req.params.id });
+        res.status(200).json({ message: 'Le post a été supprimé' })
+    } catch (error) {
+        res.status(400).json({ error });
+    }
 }
 
 module.exports = {
