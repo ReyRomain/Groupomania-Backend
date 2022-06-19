@@ -16,9 +16,8 @@ const jwt = require('jsonwebtoken');
 
 const fs = require('fs');
 
-const { db } = require("../models/database");
+const {isAllowedUser} = require("./security");
 const user = require("../models/usersModels");
-const { findByUserId } = require('../models/postsModel');
 
 /**
  * Création d'un utilisateur
@@ -80,11 +79,9 @@ function login(req, res, next) {
 function modifyUser(req, res, next) {
 
     try {
-        //si id à modifier !== id courrant throw "pas le droit"
-        //if (id !== findByUserId) throw
-        user.update(req.body);
+        isAllowedUser({id:req.body.id, idFromToken:req.authorizedUserId})
+        user.updateById(req.body);
         res.status(200).json({ message: "Utilisateur modifié !" });
-
     } catch (error) {
         res.status(400).json(error);
     }
@@ -100,40 +97,14 @@ function modifyUser(req, res, next) {
  * @return  {void}                   envoie une réponse
  */
 function deleteUser(req, res, next) {
-    user.findByEmail.remove({ userId: req.params.userId })
-        .then(() => res.status(200).json({ message: 'Utilisateur supprimé !' }))
-        .catch(error => res.status(400).json({ error }));
-}
-
-/*
-function deleteUser2(req, res, next) {
-    if (req.body.password) {
-        let sql = "SELECT * FROM users WHERE id=?"
-        db.exec(sql, [req.params.id], function (error, result) {
-            let user = result[0];
-            bcrypt.compare(req.body.password, user.password)
-                .then(valid => {
-                    if (!valid) {
-                        return res.status(401).json({ error: "Mot de passe incorrect !" });
-                    }
-                    else {
-                        bcrypt.hash(req.body.password, 10)
-                            .then(hash => {
-                                let sql = "DELETE FROM users WHERE id=?";
-                                db.exec(sql, [req.params.id], function (error, result) {
-                                    if (error) throw error;
-                                    console.log(result);
-                                    res.status(200).json({ message: `Utilisateur ${req.params.id} supprimé !` });
-                                })
-                            })
-                            .catch(error => res.status(500).json({ error }));
-                    }
-                })
-                .catch(error => res.status(500).json({ message: "Erreur d'authentification !" }));
-        })
+    try {
+        isAllowedUser({id:req.body.id, idFromToken:req.authorizedUserId, couldBeAdmin:true})
+        user.removeById(req.body.id);
+        res.status(200).json({ message: 'Utilisateur supprimé !' });
+    } catch (error) {
+        res.status(400).json({ error })
     }
 }
-*/
 
 module.exports = {
     deleteUser,
