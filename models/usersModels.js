@@ -56,6 +56,15 @@ function findByEmail(email){
 }
 
 /**
+ * Trouver un utilisateur par son id
+ */
+function findById(user){
+    return db
+        .prepare("SELECT * FROM users WHERE id=@id")
+        .get(user);
+}
+
+/**
  * Modification d'un utilisateur
  *
  * @param   {Object}  newSpecs             l'objet modifié par l'utilisateur
@@ -66,7 +75,7 @@ function findByEmail(email){
  *
  * @return  {void}                         modification de l'utilisateur dans la base de donnée
  */
-function update(newSpecs){
+function updateById(newSpecs){
     let sql= "UPDATE users SET";
     for (const key in newSpecs){
         if (key === "id") continue;
@@ -79,28 +88,25 @@ function update(newSpecs){
 /**
  * Suppression d'un utilisateur
  * 
- * @param   {Object}   removeUser              l'objet supprimé par l'utilisateur
- * @param   {String}   removeUser.id           l'id de suppression
- * @param   {String}   removeUser.email        l'utilisateur supprime son email
- * @param   {String}   removeUser.name         l'utilisateur supprime son nom
- * @param   {String}   removeUser.password     l'utilisateur supprime son mot de passe hasher
+ * @param   {Object}   removeUser                l'objet supprimé par l'utilisateur
+ * @param   {String}   removeUser.id             l'id de suppression
+ * @param   {String}   [removeUser.email]        l'utilisateur supprime son email
+ * @param   {String}   [removeUser.name]         l'utilisateur supprime son nom
+ * @param   {String}   [removeUser.password]     l'utilisateur supprime son mot de passe hasher
  *
- * @return  {void}                             suppression de l'utilisateur dans la base de donnée
+ * @return  {void}                               suppression de l'utilisateur dans la base de donnée
  */
-function remove(removeUser){
-    let sql= "DELETE FROM users";
-    for (const key in removeUser){
-        if (key === "id") continue;
-        sql+=` ${key}='${removeUser[key]}'`;
-    }
-    sql+=" WHERE id=@id";
-    db.prepare(sql).run(removeUser);
+function removeById(removeUser){
+    db
+        .prepare("DELETE FROM users WHERE id=@id")
+        .run(removeUser);
 }
 
 module.exports = {
     create,
     emailExists,
     findByEmail,
-    remove,
-    update
+    findById,
+    removeById,
+    updateById
 }
