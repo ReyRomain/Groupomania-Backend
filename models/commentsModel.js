@@ -28,6 +28,20 @@ function findByCommentId(commentId){
 }
 
 /**
+ * Trouve l'utilisateur par son Id
+ *
+ * @param   {Object}  comment            récupère l'objet
+ * @param   {String}  comment.id         récupère le string entré par l'utilisateur
+ *
+ * @return  {Number}               
+ */
+ function findAuthorByCommentId(comment){
+    return db
+        .prepare("SELECT user_id FROM posts WHERE user_id=$id")
+        .get(comment);
+}
+
+/**
  * Récupère les commentaires
  */
 function allComments(comments) {
@@ -64,7 +78,7 @@ function create(comment){
  *
  * @return  {void}                              modification du commentaire par l'utilisateur dans la base de donnée
  */
-function update(newSpecs){
+function updateById(newSpecs){
     let sql= "UPDATE comments SET";
     for (const key in newSpecs){
         if (key === "id") continue;
@@ -77,28 +91,25 @@ function update(newSpecs){
 /**
  * Suppression d'un commentaire
  * 
- * @param   {Object}   removeComment                 l'objet supprimé par l'utilisateur
- * @param   {String}   removeComment.id              l'id de suppression
- * @param   {String}   removeComment.content         l'utilisateur supprime le contenu du commentaire
- * @param   {String}   removeComment.commentId       l'utilisateur supprime le nom du commentaire
- * @param   {String}   removeComment.publication     l'utilisateur supprime la publication du commentaire
+ * @param   {Object}   removeComment                   l'objet supprimé par l'utilisateur
+ * @param   {String}   removeComment.id                l'id de suppression
+ * @param   {String}   [removeComment.content]         l'utilisateur supprime le contenu du commentaire
+ * @param   {String}   [removeComment.commentId]       l'utilisateur supprime le nom du commentaire
+ * @param   {String}   [removeComment.publication]     l'utilisateur supprime la publication du commentaire
  *
- * @return  {void}                                   suppression du commentaire dans la base de donnée
+ * @return  {void}                                     suppression du commentaire dans la base de donnée
  */
-function remove(removeComment){
-    let sql= "DELETE FROM comments";
-    for (const key in removeComment){
-        if (key === "id") continue;
-        sql+=` ${key}='${removeComment[key]}'`;
-    }
-    sql+=" WHERE id=@id";
-    db.prepare(sql).run(removeComment);
+function removeById(removeComment){
+    db
+        .prepare("DELETE FROM comments WHERE id=@id")
+        .run(removeComment);
 }
 
 module.exports = {
     allComments,
     create,
+    findAuthorByCommentId,
     findByCommentId,
-    remove,
-    update
+    removeById,
+    updateById
 }
