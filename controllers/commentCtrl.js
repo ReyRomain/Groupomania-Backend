@@ -6,12 +6,13 @@
  * @typedef  {import("multer").DiskStorageOptions} multerImage
  * 
  * @typedef  {Object} commentRequest
- * @property {Object} body            récupère le corps de la requête
- * @property {String} body.post       récupère le commentaire dans le corps de la requête
+ * @property {Object} body               récupère le corps de la requête
+ * @property {String} body.comment       récupère le commentaire dans le corps de la requête
 */
 
 const {db} = require("../models/database");
 const commentM = require("../models/commentsModel");
+const {isAllowedUser} = require("./security");
 
 /**
  * Récupération des commentaires
@@ -63,14 +64,14 @@ function createComment(req, res, next) {
  * @return  {void}                                                    envoie une réponse
  */
 function modifyComment(req, res, next) {
-    const commentObject = req.file ?
-        {
-            ...JSON.parse(req.body.comment),
-            imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-        } : { ...req.body };
-    commentM.update({ _id: req.params.id }, { ...commentObject, _id: req.params.id })
-        .then(() => res.status(200).json({ message: 'Le commentaire a été modifié !' }))
-        .catch(error => res.status(400).json({ error }));
+
+    try {
+        isAllowedUser({id:req.body.id, idFromToken:req.authorizedUserId})
+        commentM.updateById(req.body);
+        res.status(200).json({ message: 'Le commentaire a été modifié !' });
+    } catch (error) {
+        res.status(400).json({ error })
+    }
 }
 
 /**
@@ -83,9 +84,18 @@ function modifyComment(req, res, next) {
  * @return  {void}                     envoie une réponse
  */
 function deleteComment(req, res, next) {
-    commentM.remove({ _id: req.params.id })
-        .then(() => res.status(200).json({ message: 'Le post a été supprimé' }))
-        .catch(error => res.status(400).json({ error }));
+    try {
+        const authorId = commentM.findAuthorByCommentId({ id:req.params.id })
+        isAllowedUser({
+            id: authorId,
+            idFromToken: req.authorizedUserId,
+            couldBeAdmin: true
+        });
+        commentM.removeById({ id: req.params.id });
+        res.status(200).json({ message: 'Le commentaire a été supprimé' })
+    } catch (error) {
+        res.status(400).json({ error })
+    }
 }
 
 module.exports = {
