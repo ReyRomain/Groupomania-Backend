@@ -5,6 +5,11 @@ const { default: helmet } = require('helmet');
 
 const app = express();
 
+const userRoute = require("./routes/userRoute");
+const likeRoute = require("./routes/likeRoute");
+const postRoute = require("./routes/postRoute");
+const commentRoute = require("./routes/commentRoute");
+
 /**
  * Permet de faire communiquer les ports entre eux afin d'éviter les erreurs CORS
  */
@@ -31,6 +36,11 @@ else app.use(helmet());
  * BodyParser
  */
 app.use(express.json());
+
+app.use("/api/auth", userRoute);
+app.use("/api/posts", postRoute);
+app.use("/api/likes", likeRoute);
+app.use("/api/comments", commentRoute);
 
 /**
  * Middleware qui permet de charger les fichiers
