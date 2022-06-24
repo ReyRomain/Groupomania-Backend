@@ -1,5 +1,3 @@
-const express = require('express');
-
 /**
  * Middleware controller
  */
@@ -10,9 +8,9 @@ const likeCtrl = require("../controllers/likeCtrl");
  */
 const auth = require("../middlewares/auth");
 
-const router = express.Router();
+const router = require('express').Router();
 
-router.get("/", auth, likeCtrl.getAllLikes);
-router.put("/", auth, likeCtrl.updateLikes);
+router.get("/post/:id", auth, likeCtrl.getAllLikes);
+router.put("/post/:id/updateLikes", auth, likeCtrl.updateLikes);
 
 module.exports = router;

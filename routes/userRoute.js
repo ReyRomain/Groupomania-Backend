@@ -1,5 +1,3 @@
-const express = require('express');
-
 /**
  * Middleware controller
  */
@@ -10,7 +8,7 @@ const userCtrl = require("../controllers/userCtrl");
  */
 const auth = require("../middlewares/auth");
 
-const router = express.Router();
+const router = require('express').Router();
  
 router.post('/signup', userCtrl.signup);
 router.post('/login', userCtrl.login);
