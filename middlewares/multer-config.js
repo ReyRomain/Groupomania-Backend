@@ -36,10 +36,15 @@ const filename = (req, file, callback) => {
      * Création de l'extension de fichier
      */
     const extension = MIME_TYPES[file.mimetype];
+
+    const filename = name + Date.now() + '.' + extension;
+
+    req.body.imageUrl= `${req.protocol}://${req.get('host')}/images/${filename}`
+    
     /**
      * Création du fileName entier
      */
-    callback(null, name + Date.now() + '.' + extension);
+    callback(null, filename );
 };
 
 module.exports = multer({
