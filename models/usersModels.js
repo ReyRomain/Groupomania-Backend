@@ -10,6 +10,7 @@ const userSchema =  /*sql*/`
     pwd TEXT,
     email TEXT NOT NULL UNIQUE,
     name TEXT,
+    imageUrl TEXT,
     admin BOOLEAN
 `
 
@@ -24,7 +25,7 @@ initTable("users", userSchema);
  * @return  {Boolean}              retourne true ou false
  */
 function emailExists(email){
-    const sql = db.prepare("SELECT id FROM users WHERE email=@email");
+    const sql = db.prepare(/*sql*/`SELECT id FROM users WHERE email=@email`);
     return sql.get(email) ? true : false;
 
 }
@@ -41,7 +42,7 @@ function emailExists(email){
  */
 function create(user){
     db
-        .prepare("INSERT INTO users (pwd, email, name, admin) VALUES (@password, @email, @name, 0)")
+        .prepare(/*sql*/`INSERT INTO users (pwd, email, name, admin) VALUES (@password, @email, @name, 0)`)
         .run(user);
 
 }
@@ -51,7 +52,7 @@ function create(user){
  */
 function findByEmail(email){
     return db
-        .prepare("SELECT * FROM users WHERE email=@email")
+        .prepare(/*sql*/`SELECT * FROM users WHERE email=@email`)
         .get(email);
 }
 
@@ -60,7 +61,7 @@ function findByEmail(email){
  */
 function findById(user){
     return db
-        .prepare("SELECT * FROM users WHERE id=@id")
+        .prepare(/*sql*/`SELECT * FROM users WHERE id=@id`)
         .get(user);
 }
 
@@ -98,7 +99,7 @@ function updateById(newSpecs){
  */
 function removeById(removeUser){
     db
-        .prepare("DELETE FROM users WHERE id=@id")
+        .prepare(/*sql*/`DELETE FROM users WHERE id=@id`)
         .run(removeUser);
 }
 

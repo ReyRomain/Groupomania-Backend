@@ -10,6 +10,7 @@ const postSchema =  /*sql*/`
     content TEXT,
     user_id INTEGER,
     publication DATE,
+    imageUrl TEXT,
     usersLike TEXT
 `
 
@@ -24,7 +25,7 @@ initTable("posts", postSchema);
  * @return  {Boolean}                   retourne true ou false
  */
 function findByUserId(userId){
-    const sql = db.prepare("SELECT id FROM posts WHERE user_id=$userId");
+    const sql = db.prepare(/*sql*/`SELECT id FROM posts WHERE user_id=$userId`);
     return sql.get(userId) ? true : false;
 }
 
@@ -39,7 +40,7 @@ function findByUserId(userId){
  */
  function findAuthorByPostId(post){
     return db
-        .prepare("SELECT user_id FROM posts WHERE user_id=$id")
+        .prepare(/*sql*/`SELECT user_id FROM posts WHERE user_id=$id`)
         .get(post);
 }
 
@@ -48,7 +49,7 @@ function findByUserId(userId){
  */
 function allPosts(posts) {
     return db 
-        .prepare("SELECT * FROM posts JOIN users WHERE user.id=userId ORDER BY publication DESC LIMIT 50")
+        .prepare(/*sql*/`SELECT * FROM posts JOIN users WHERE user.id=userId ORDER BY publication DESC LIMIT 50`)
         .get(posts);
 }
 
@@ -64,7 +65,7 @@ function allPosts(posts) {
  */
 function create(post){
     db
-        .prepare("INSERT INTO posts (content, user_id, publication, usersLike ) VALUES (@content, @user_id, NOW, '[]')")
+        .prepare(/*sql*/`INSERT INTO posts (content, user_id, publication, usersLike ) VALUES (@content, @user_id, NOW, '[]')`)
         .run(post);
 }
 
@@ -103,7 +104,7 @@ function updateById(newSpecs){
  */
 function removeById(removePost){
     db
-        .prepare("DELETE FROM posts WHERE id=$id")
+        .prepare(/*sql*/`DELETE FROM posts WHERE id=$id`)
         .run(removePost);
 }
 
@@ -125,7 +126,7 @@ false j'aimais mais je n'aime plus
 function updateLikes({userId, postId, like}){
     const usersLike = JSON.parse(
         db
-            .prepare("SELECT usersLike FROM posts WHERE id=$postId")
+            .prepare(/*sql*/`SELECT usersLike FROM posts WHERE id=$postId`)
             .run({postId})
             .usersLike
     );
