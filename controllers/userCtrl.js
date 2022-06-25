@@ -3,6 +3,8 @@
  * @typedef  {import('express').Response}     ServerResponse
  * @typedef  {import('express').NextFunction} NextFunction
  * 
+ * @typedef  {import("multer").DiskStorageOptions} multerImage
+ * 
  * @typedef  {Object}   userCredentials
  * @property {Object}   body            récupère le corps de la requête
  * @property {String}   body.email      récupère l'user de la base de donnée qui correspond à l'adresse mail entrée
@@ -22,9 +24,9 @@ const user = require("../models/usersModels");
 /**
  * Création d'un utilisateur
  *
- * @param   {IncomingMessage & userCredentials}    req      la requête complétée pour l'inscription
- * @param   {ServerResponse}                       res      la réponse
- * @param   {NextFunction}                         next     passe à la fonction suivante
+ * @param   {IncomingMessage & multerImage & userCredentials}    req      la requête complétée pour l'inscription
+ * @param   {ServerResponse}                                     res      la réponse
+ * @param   {NextFunction}                                       next     passe à la fonction suivante
  *
  * @return  {Promise.<void>}
  */
@@ -70,11 +72,11 @@ function login(req, res, next) {
 /**
  * Modifie un utilisateur
  *
- * @param   {IncomingMessage}   req   la requête complétée
- * @param   {ServerResponse}    res   la réponse
- * @param   {NextFunction}      next  passe à la fonction suivante
+ * @param   {IncomingMessage & multerImage}   req   la requête complétée par une image Multer
+ * @param   {ServerResponse}                  res   la réponse
+ * @param   {NextFunction}                    next  passe à la fonction suivante
  *
- * @return  {void}                    envoie une réponse
+ * @return  {void}                                  envoie une réponse
  */
 function modifyUser(req, res, next) {
 
