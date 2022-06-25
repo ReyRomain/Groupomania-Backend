@@ -7,25 +7,13 @@ const {db, initTable} = require("./database");
  */
 const commentSchema =  /*sql*/`
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    post_id INTEGER,
+    author_id INTEGER
     content TEXT,
-    commentId INTEGER,
-    publication DATE
+    publication DATE,
 `
 
 initTable("comments", commentSchema);
-
-/**
- * Trouve le commentaire par son Id
- *
- * @param   {Object}  commentId               récupère l'objet
- * @param   {String}  commentId.commentId     récupère le string entré par l'utilisateur
- *
- * @return  {Boolean}                         retourne true ou false
- */
-function findByCommentId(commentId){
-    const sql = db.prepare("SELECT id FROM comments WHERE commentId=$commentId");
-    return sql.get(commentId) ? true : false;
-}
 
 /**
  * Trouve l'utilisateur par son Id
@@ -37,17 +25,22 @@ function findByCommentId(commentId){
  */
  function findAuthorByCommentId(comment){
     return db
-        .prepare("SELECT user_id FROM posts WHERE user_id=$id")
+        .prepare(/*sql*/`SELECT user_id FROM posts WHERE user_id=$id`)
         .get(comment);
 }
 
 /**
- * Récupère les commentaires
+ * Récupère les commentaires (50 max) d'une publication
+ *
+ * @param   {Object}  comments                l'objet du commentaire
+ * @param   {String}  comments.postId         l'id du post
+ *
+ * @return  {Array}                           les commentaires d'un post
  */
 function allComments(comments) {
     return db 
-        .prepare("SELECT * FROM comments JOIN users WHERE user.id=userId ORDER BY publication DESC LIMIT 50")
-        .get(comments);
+        .prepare(/*sql*/`SELECT * FROM comments JOIN users ON user.id=comments.author_id WHERE comments.post_id=@postId ORDER BY publication DESC LIMIT 50`)
+        .all(comments);
 }
 
 /**
@@ -55,14 +48,15 @@ function allComments(comments) {
  *
  * @param   {Object}  comment                l'objet du commentaire
  * @param   {String}  comment.content        le contenu du commentaire
- * @param   {String}  comment.commentId      le nom de l'utilisateur qui à créé le commentaire
+ * @param   {String}  comment.authorId       l'id de l'utilisateur qui à créé le commentaire
+ * @param   {String}  comment.postId         l'id du post auquel le commentaire est associé
  * @param   {String}  comment.publication    la date de publication du commentaire
  *
  * @return  {void}                           création d'un commentaire par l'utilisateur dans la base de donnée
  */
 function create(comment){
     db
-        .prepare("INSERT INTO comments (content, commentId, publication) VALUES (@content, @commentId, @publication)")
+        .prepare(/*sql*/`INSERT INTO comments (content, author_id, publication, post_id) VALUES (@content, @authorId, @publication, @postId)`)
         .run(comment);
 
 }
@@ -101,7 +95,7 @@ function updateById(newSpecs){
  */
 function removeById(removeComment){
     db
-        .prepare("DELETE FROM comments WHERE id=@id")
+        .prepare(/*sql*/`DELETE FROM comments WHERE id=@id`)
         .run(removeComment);
 }
 
@@ -109,7 +103,6 @@ module.exports = {
     allComments,
     create,
     findAuthorByCommentId,
-    findByCommentId,
     removeById,
     updateById
 }
