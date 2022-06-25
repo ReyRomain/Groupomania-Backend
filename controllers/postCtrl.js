@@ -10,9 +10,8 @@
  * @property {String} body.post       récupère le post dans le corps de la requête
 */
 
-const {db} = require("../models/database");
 const postM = require("../models/postsModel");
-const {isAllowedUser} = require("./security");
+const { isAllowedUser } = require("./security");
 
 const fs = require('fs');
 
@@ -31,7 +30,7 @@ function getAllPosts(req, res, next) {
         res.status(200).json(posts)
     } catch (error) {
         console.warn(error)
-        res.status(400).json({error})
+        res.status(400).json({ error })
     }
 }
 
@@ -45,15 +44,17 @@ function getAllPosts(req, res, next) {
  * @return  {void}                                                 envoie une réponse
  */
 function createPost(req, res, next) {
-    const postObject = JSON.parse(req.body.post);
-    delete postObject._id;
-    const post = postM.create({
-        ...postObject,
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-    });
-    post.save()
-        .then(() => res.status(201).json({ message: 'Le post a bien été ajouté.' }))
-        .catch(error => res.status(400).json({ error }));
+    try {
+        const postObject = JSON.parse(req.body.post);
+        postM.create({
+            ...postObject,
+            imageUrl: req.body.imageUrl
+        });
+        res.status(201).json({ message: 'Le post a bien été ajouté.' })
+    }
+    catch (error) {
+        res.status(400).json({ error })
+    };
 }
 
 /**
@@ -67,7 +68,7 @@ function createPost(req, res, next) {
  */
 function modifyPost(req, res, next) {
     try {
-        isAllowedUser({id:req.body.id, idFromToken:req.authorizedUserId})
+        isAllowedUser({ id: req.body.id, idFromToken: req.authorizedUserId })
         postM.updateById(req.body);
         res.status(200).json({ message: 'Le post a été modifié !' });
     } catch (error) {
@@ -86,11 +87,11 @@ function modifyPost(req, res, next) {
  */
 function deletePost(req, res, next) {
     try {
-        const authorId = postM.findAuthorByPostId({id:req.params.id })
+        const authorId = postM.findAuthorByPostId({ id: req.params.id })
         isAllowedUser({
             id: authorId,
             idFromToken: req.authorizedUserId,
-            couldBeAdmin : true
+            couldBeAdmin: true
         });
         postM.removeById({ id: req.params.id });
         res.status(200).json({ message: 'Le post a été supprimé' })
