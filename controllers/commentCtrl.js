@@ -15,7 +15,7 @@ const commentM = require("../models/commentsModel");
 const {isAllowedUser} = require("./security");
 
 /**
- * Récupération des commentaires
+ * Récupération des commentaires d'un post
  *
  * @param   {IncomingMessage}  req   la requête complétée
  * @param   {ServerResponse}   res   la réponse
@@ -25,7 +25,7 @@ const {isAllowedUser} = require("./security");
  */
 function getAllComments(req, res, next) {
     try {
-        const comments = commentM.allComments();
+        const comments = commentM.allComments({postId:req.params.id});
         res.status(200).json(comments)
     } catch (error) {
         console.warn(error)
@@ -43,15 +43,17 @@ function getAllComments(req, res, next) {
  * @return  {void}                                                    envoie une réponse
  */
 function createComment(req, res, next) {
-    const commentObject = JSON.parse(req.body.comment);
-    delete commentObject._id;
-    const comment = commentM.create({
-        ...commentObject,
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-    });
-    comment.save()
-        .then(() => res.status(201).json({ message: 'Le commentaire a bien été ajouté.' }))
-        .catch(error => res.status(400).json({ error }));
+
+    try {
+        const commentObject = JSON.parse(req.body.comment);
+        commentM.create({
+            ...commentObject,
+            imageUrl: req.body.imageUrl
+        });
+        res.status(201).json({ message: 'Le commentaire a bien été ajouté.' })
+    } catch (error) {
+        res.status(400).json({ error })
+    }
 }
 
 /**
