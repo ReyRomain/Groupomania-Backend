@@ -8,9 +8,17 @@
  * @typedef  {Object} postRequest
  * @property {Object} body            récupère le corps de la requête
  * @property {String} body.post       récupère le post dans le corps de la requête
+ * 
+ * @typedef  {Object} likeHandler
+ * @property {Object} body            récupère le corps de la requête
+ * @property {Number} body.userId     récupère l'userId
+ * @property {Number} body.like       récupère le nombre de like
+ * @property {Object} params          récupère les params
+ * @property {Number} params.id       récupère l'id des params selectionné
 */
 
 const postM = require("../models/postsModel");
+const likeM = require("../models/likesModel");
 const { isAllowedUser } = require("./security");
 
 const fs = require('fs');
@@ -18,11 +26,11 @@ const fs = require('fs');
 /**
  * Récupération des posts
  *
- * @param   {IncomingMessage}  req   la requête complétée
- * @param   {ServerResponse}   res   la réponse
- * @param   {NextFunction}     next  passe à la fonction suivante
+ * @param   {IncomingMessage & postRequest}  req   la requête complétée
+ * @param   {ServerResponse}                 res   la réponse
+ * @param   {NextFunction}                   next  passe à la fonction suivante
  *
- * @return  {void}                   envoie une réponse
+ * @return  {void}                                 envoie une réponse
  */
 function getAllPosts(req, res, next) {
     try {
@@ -79,11 +87,11 @@ function modifyPost(req, res, next) {
 /**
  * Supprime un post
  * 
- * @param   {IncomingMessage}   req    la requête complétée
- * @param   {ServerResponse}    res    la réponse
- * @param   {NextFunction}      next   passe à la fonction suivante
+ * @param   {IncomingMessage & postRequest}   req    la requête complétée
+ * @param   {ServerResponse}                  res    la réponse
+ * @param   {NextFunction}                    next   passe à la fonction suivante
  *
- * @return  {void}                     envoie une réponse
+ * @return  {void}                                   envoie une réponse
  */
 function deletePost(req, res, next) {
     try {
@@ -100,9 +108,29 @@ function deletePost(req, res, next) {
     }
 }
 
+/**
+ * Récupération des likes
+ *
+ * @param   {IncomingMessage & likeHandler}  req   la requête complétée
+ * @param   {ServerResponse}                 res   la réponse
+ * @param   {NextFunction}                   next  passe à la fonction suivante
+ *
+ * @return  {void}                                 envoie une réponse  
+ */
+function getAllLikes(req, res, next) {
+    try {
+        const likes = likeM.getLikes();
+        res.status(200).json(likes)
+    } catch (error) {
+        console.warn(error)
+        res.status(400).json({error})
+    }
+}
+
 module.exports = {
     createPost,
     deletePost,
+    getAllLikes,
     getAllPosts,
     modifyPost
 }
