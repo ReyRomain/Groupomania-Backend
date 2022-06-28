@@ -127,10 +127,52 @@ function getAllLikes(req, res, next) {
     }
 }
 
+/**
+ * Ajoute ou supprime un like
+ *
+ * @param   {IncomingMessage & likeHandler}   req     la requête complétée
+ * @param   {ServerResponse}                  res     la réponse
+ * @param   {NextFunction}                    next    passe à la fonction suivante
+ *
+ * @return  {Promise}                                 retourne la modification des likes à l'affichage & envoie une réponse
+ */
+async function updateLikes(req, res, next) {
+    const { userId, like } = req.body;
+    const postId = req.params.id
+    let msg, todo;
+    try {
+        if (like === 1) {
+            todo = {
+                $push: { usersLiked: userId },
+                $inc: { likes: 1 }
+            };
+            msg = "Like ajouté";
+        }
+        if (like === 0) {
+            const post = await likeM.findOne({ _id: postId })
+            if (post.usersLiked.includes(userId)) {
+                todo = {
+                    $pull: { usersLiked: userId },
+                    $inc: { likes: -1 }
+                };
+                msg = "Like retiré";
+            }
+        }
+        await post.updateOne(
+            { _id: req.params.id },
+            todo
+        );
+        res.status(200).json({ message: msg });
+    } catch (error) {
+        res.status(400).json({ error })
+    }
+}
+
 module.exports = {
     createPost,
     deletePost,
     getAllLikes,
     getAllPosts,
-    modifyPost
+    modifyPost,
+    updateLikes
 }
