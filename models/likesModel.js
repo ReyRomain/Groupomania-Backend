@@ -1,3 +1,4 @@
+const { json } = require("express");
 const { db, initTable } = require("./database");
 
 /**
@@ -7,33 +8,23 @@ const { db, initTable } = require("./database");
  */
 const likeSchema =  /*sql*/`
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    content TEXT,
-    likeId INTEGER,
-    publication DATE
+    post_id INTEGER,
+    likersArray TEXT DEFAULT "[]" NOT NULL
 `
 
 initTable("likes", likeSchema);
 
 /**
- * Trouve le like par son Id
- *
- * @param   {Object}  likeId            récupère l'objet
- * @param   {String}  likeId.likeId     récupère le string entré par l'utilisateur
- *
- * @return  {Boolean}                   retourne true ou false
+ * Récupère le nombre de like d'un post
+ * 
+ * @param   {Object}  post            récupère l'objet
+ * @param   {String}  post.id         récupère le string entré par l'utilisateur
  */
-function findByLikeId(likeId){
-    const sql = db.prepare("SELECT id FROM likes WHERE likeId=$likeId");
-    return sql.get(likeId) ? true : false;
-}
-
-/**
- * Récupère les posts
- */
-function allLikes(likes) {
-    return db 
-        .prepare("SELECT * FROM likes JOIN users WHERE user.id=userId ORDER BY publication DESC LIMIT 50")
-        .get(likes);
+function getLikes(post) {
+    const likes = db 
+        .prepare(/*sql*/`SELECT likersArray FROM likes WHERE post_id=@id`)
+        .get(post);
+    return JSON.parse(likes).length;
 }
 
 
@@ -41,43 +32,58 @@ function allLikes(likes) {
  * Création d'un like
  *
  * @param   {Object}  like              l'objet du like
- * @param   {String}  like.content      le contenu du like
- * @param   {String}  like.likeId       le nom de l'utilisateur qui à créé le like
- * @param   {String}  like.publication  la date de publication du like
+ * @param   {String}  like.userId      
+ * @param   {String}  like.postId  
+ * @param   {String}  like.likersArray     
  *
  * @return  {void}                      création d'un like par l'utilisateur dans la base de donnée
  */
-function create(like){
-    db
-        .prepare("INSERT INTO likes (content, likeId, publication) VALUES (@content, @likeId, @publication)")
-        .run(like);
+function add(like){
+    //1. on récupère le likersArray quand post_id === @postId
+    //const data = db
+    //                .prepare(/*sql*/`UPDATE posts SET(userId, postId) VALUES (@user_id, @like, @publication)`)
+    //                .get(like)
+    //2. on transforme en tableau
+    //const likersArray = JSON.parse(data);
+    //3. on ajoute userId dans le tableau si il n'y est pas
+    //4. on met à jour avec un update
+    //db
+        //.run({likersArray : JSON.stringify(likersArray)});
 
+    let data = "UPDATE posts SET";
+    const likersArray = JSON.parse(data);
+    for (const key in like){
+        if (key === "like") continue;
+        data+=` ${key}='${like[key]}'`;
+    }
+    data+=" WHERE post_id ===@postId";
+    db
+        .prepare(data)
+        .run({likersArray : JSON.stringify(likersArray)});
 }
 
 /**
  * Suppression d'un like
  * 
- * @param   {Object}   removeLike                 l'objet supprimé par l'utilisateur
- * @param   {String}   removeLike.id              l'id de suppression
- * @param   {String}   removeLike.content         l'utilisateur supprime le contenu du like
- * @param   {String}   removeLike.user_id         l'utilisateur supprime le nom du like
- * @param   {String}   removeLike.publication     l'utilisateur supprime la publication du like
- *
- * @return  {void}                                suppression du like dans la base de donnée
+ * @param   {Object}   like                 l'objet supprimé par l'utilisateur
+ * @param   {String}   like.id              l'id de suppression
+ * @param   {String}   like.userId          
+ * @param   {String}   like.postId
+ * 
+ * @return  {void}                          suppression du like dans la base de donnée
  */
-function remove(removeLike){
+function remove(like){
     let sql= "DELETE FROM likes";
-    for (const key in removeLike){
+    for (const key in like){
         if (key === "id") continue;
-        sql+=` ${key}='${removeLike[key]}'`;
+        sql+=` ${key}='${like[key]}'`;
     }
     sql+=" WHERE id=@id";
-    db.prepare(sql).run(removeLike);
+    db.prepare(sql).run(like);
 }
 
 module.exports = {
-    allLikes,
-    create,
-    findByLikeId,
+    add,
+    getLikes,
     remove
 }
