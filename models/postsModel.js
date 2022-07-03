@@ -11,7 +11,8 @@ const postSchema =  /*sql*/`
     user_id INTEGER,
     publication DATE,
     imageUrl TEXT,
-    usersLike TEXT
+    likersArray TEXT DEFAULT "[]" NOT NULL,
+    likes INTEGER DEFAULT 0 NOT NULL,
 `
 
 initTable("posts", postSchema);
@@ -25,7 +26,11 @@ initTable("posts", postSchema);
  * @return  {Boolean}                   retourne true ou false
  */
 function findByUserId(userId){
-    const sql = db.prepare(/*sql*/`SELECT id FROM posts WHERE user_id=$userId`);
+    const sql = db.prepare(/*sql*/`
+        SELECT id 
+        FROM posts 
+        WHERE user_id=$userId
+    `);
     return sql.get(userId) ? true : false;
 }
 
@@ -40,7 +45,11 @@ function findByUserId(userId){
  */
  function findAuthorByPostId(post){
     return db
-        .prepare(/*sql*/`SELECT user_id FROM posts WHERE user_id=$id`)
+        .prepare(/*sql*/`
+            SELECT user_id 
+            FROM posts 
+            WHERE user_id=$id
+        `)
         .get(post);
 }
 
@@ -49,7 +58,12 @@ function findByUserId(userId){
  */
 function allPosts(posts) {
     return db 
-        .prepare(/*sql*/`SELECT * FROM posts JOIN users WHERE user.id=userId ORDER BY publication DESC LIMIT 50`)
+        .prepare(/*sql*/`
+            SELECT content, user_id, publication, imageUrl, likes 
+            FROM posts 
+            JOIN users ON user.id=userId 
+            ORDER BY publication DESC 
+            LIMIT 50`)
         .get(posts);
 }
 
@@ -59,13 +73,17 @@ function allPosts(posts) {
  * @param   {Object}  post                l'objet du post
  * @param   {String}  post.content        le contenu du post
  * @param   {String}  post.user_id        le nom de l'utilisateur qui à créé le post
- * @param   {String}  [post.publication]  la date de publication du post
+ * @param   {String}  [post.now]  la date de publication du post
  *
  * @return  {void}                        création d'un post par l'utilisateur dans la base de donnée
  */
 function create(post){
+    post.now = new Date().toLocaleString();
     db
-        .prepare(/*sql*/`INSERT INTO posts (content, user_id, publication, usersLike ) VALUES (@content, @user_id, NOW, '[]')`)
+        .prepare(/*sql*/`
+            INSERT INTO posts (content, user_id, publication ) 
+            VALUES (@content, @user_id, @now)
+        `)
         .run(post);
 }
 
@@ -74,14 +92,33 @@ function create(post){
  *
  * @param   {Object}  newSpecs                le post modifié par l'utilisateur
  * @param   {String}  newSpecs.id             l'id de la modification
- * @param   {String}  [newSpecs.content]      si l'utilisateur modifie le contenu du post
- * @param   {String}  [newSpecs.user_id]      si l'utilisateur modifie le nom du post
- * @param   {String}  [newSpecs.publication]  si l'utilisateur modifie la publication du post
- * @param   {String}  [newSpecs.usersLike]    si l'utilisateur modifie la publication du post
+ * @param   {String}  [newSpecs.user_id]      si l'utilisateur modifie le propriétaire du post
+ * @param   {Boolean} [newSpecs.like]         true +1 like par l'utilisateur ou false -1 pour retirer son like (true j'aime et je n'avais pas d'avis avant false j'aimais mais je n'aime plus)
  *
  * @return  {void}                            modification du post par l'utilisateur dans la base de donnée
  */
 function updateById(newSpecs){
+    if (newSpecs.like !== undefined){
+        const data = db
+            .prepare(/*sql*/`
+                SELECT likersArray 
+                FROM posts 
+                WHERE id=@id
+            `)
+            .get(newSpecs)
+        const likersArray = JSON.parse(data.likersArray);
+        if (newSpecs.like) likersArray.push(newSpecs.user_id);
+        else likersArray.slice(likersArray.indexOf(newSpecs.user_id),1);
+        const add = {
+            likersArray : JSON.stringify(likersArray),
+            likes : likersArray.length
+        }
+        newSpecs = {
+            ...newSpecs,
+            ...add
+        }
+    }
+
     let sql= "UPDATE posts SET";
     for (const key in newSpecs){
         if (key === "id") continue;
@@ -96,46 +133,16 @@ function updateById(newSpecs){
  * 
  * @param   {Object}   removePost                   l'objet supprimé par l'utilisateur
  * @param   {String}   removePost.id                l'id de suppression
- * @param   {String}   [removePost.content]         l'utilisateur supprime le contenu du post
- * @param   {String}   [removePost.user_id ]        l'utilisateur supprime le nom du post
- * @param   {String}   [removePost.publication]     l'utilisateur supprime la publication du post
- *
  * @return  {void}                                  suppression du post dans la base de donnée
  */
 function removeById(removePost){
     db
-        .prepare(/*sql*/`DELETE FROM posts WHERE id=$id`)
+        .prepare(/*sql*/`
+            DELETE FROM posts 
+            WHERE id=$id
+        `)
         .run(removePost);
 }
-
-/*
-true j'aime et je n'avais pas d'avis avant
-false j'aimais mais je n'aime plus
-*/
-
-/**
- * Modification des likes
- *
- * @param   {Object}   arguments           l'objet modifié
- * @param   {Number}   arguments.userId    l'id de l'utilisateur
- * @param   {Number}   arguments.postId    l'id du post
- * @param   {Boolean}  arguments.like      true +1 like par l'utilisateur ou false -1 pour retirer son like
- *
- * @return  {Number}                        le nombre actuels de likes
- */
-function updateLikes({userId, postId, like}){
-    const usersLike = JSON.parse(
-        db
-            .prepare(/*sql*/`SELECT usersLike FROM posts WHERE id=$postId`)
-            .run({postId})
-            .usersLike
-    );
-    if (like) usersLike.push(userId);
-    else usersLike.splice(usersLike.indexOf(userId), 1);
-    updateById({"usersLike":JSON.stringify(usersLike), id:postId});
-    return usersLike.length;
-}
-
 
 module.exports = {
     allPosts,
@@ -143,6 +150,5 @@ module.exports = {
     findAuthorByPostId,
     findByUserId,
     removeById,
-    updateById,
-    updateLikes
+    updateById
 }
