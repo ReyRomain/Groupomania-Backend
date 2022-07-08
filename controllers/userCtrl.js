@@ -1,7 +1,7 @@
 /**
- * @typedef  {import('express').Request}      IncomingMessage
- * @typedef  {import('express').Response}     ServerResponse
- * @typedef  {import('express').NextFunction} NextFunction
+ * @typedef  {import('express').Request & import("../middlewares/auth").authMiddleware}      IncomingMessage
+ * @typedef  {import('express').Response}                                                    ServerResponse
+ * @typedef  {import('express').NextFunction}                                                NextFunction
  * 
  * @typedef  {import("multer").DiskStorageOptions} multerImage
  * 
@@ -61,6 +61,7 @@ function login(req, res, next) {
             userId: currentUser.id,
             token: jwt.sign(
                 { userId: currentUser.id },
+                //@ts-ignore
                 process.env.JWT_PASS,
                 { expiresIn: '24h' }
             )

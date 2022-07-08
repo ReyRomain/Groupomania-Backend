@@ -1,7 +1,7 @@
 /**
- * @typedef  {import('express').Request}      IncomingMessage
- * @typedef  {import('express').Response}     ServerResponse
- * @typedef  {import('express').NextFunction} NextFunction
+ * @typedef  {import('express').Request & import("../middlewares/auth").authMiddleware}      IncomingMessage
+ * @typedef  {import('express').Response}                                                    ServerResponse
+ * @typedef  {import('express').NextFunction}                                                NextFunction
  * 
  * @typedef  {import("multer").DiskStorageOptions} multerImage
  * 
