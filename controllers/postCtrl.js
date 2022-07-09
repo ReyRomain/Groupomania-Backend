@@ -1,7 +1,7 @@
 /**
- * @typedef  {import('express').Request}      IncomingMessage
- * @typedef  {import('express').Response}     ServerResponse
- * @typedef  {import('express').NextFunction} NextFunction
+ * @typedef  {import('express').Request & import("../middlewares/auth").authMiddleware}      IncomingMessage
+ * @typedef  {import('express').Response}                                                    ServerResponse
+ * @typedef  {import('express').NextFunction}                                                NextFunction
  * 
  * @typedef  {import("multer").DiskStorageOptions} multerImage
  * 
@@ -67,37 +67,20 @@ function createPost(req, res, next) {
 /**
  * Modification d'un post
  *
- * @param   {IncomingMessage & multerImage & postRequest}   req    la requête complétée par une image Multer
+ * @param   {IncomingMessage & multerImage & likeHandler }   req    la requête complétée par une image Multer
  * @param   {ServerResponse}                                res    la réponse
  * @param   {NextFunction}                                  next   passe à la fonction suivante
  *
  * @return  {void}                                                 envoie une réponse
  */
 function modifyPost(req, res, next) {
-    const { userId, like } = req.body;
-    const postId = req.params.id
-    let msg, todo;
     try {
         isAllowedUser({ 
             id: req.body.id,
             idFromToken: req.authorizedUserId 
-        })
-        if (like === 1) {
-            todo = {
-                $push: { usersLiked: userId },
-                $inc: { likes: 1 }
-            };
-            msg = "Like ajouté";
-        }
-        if (like === 0) {
-            todo = {
-                $pull: { usersLiked: userId },
-                $inc: { likes: -1 }
-            };
-            msg = "Like retiré";
-        }
-        postM.updateById(req.body);
-        res.status(200).json({ message: 'Le post a été modifié !' || msg });
+        });
+        postM.updateById({...req.body, id :  req.params.id });
+        res.status(200).json({ message: 'Le post a été modifié !' });
     } catch (error) {
         res.status(400).json(error)
     }
